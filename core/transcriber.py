@@ -1,15 +1,13 @@
-
-#mannual model selection
 import whisper
 import os
 import requests
+
+from dotenv import load_dotenv
 from pydub import AudioSegment
 
-# Sarvam sync STT API accepts short audio.
-# We use 25-second pieces with a 5-second safety margin.
-SARVAM_PIECE_SECONDS = 25
+load_dotenv()
 
-/
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -17,13 +15,11 @@ SARVAM_PIECE_SECONDS = 25
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
 
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
+SARVAM_STT_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text"
+SARVAM_MODEL = os.getenv("SARVAM_STT_MODEL", "saaras:v3")
 
-SARVAM_STT_URL = "https://api.sarvam.ai/speech-to-text"
-
-SARVAM_MODEL = os.getenv(
-    "SARVAM_STT_MODEL",
-    "saaras:v3"
-)
+# Sarvam sync API: keep pieces below 30 seconds
+SARVAM_PIECE_SECONDS = 25
 
 
 _model = None
@@ -39,31 +35,65 @@ def load_model():
 
     if _model is None:
 
-        print(
-            f"Loading Whisper model: "
-            f"{WHISPER_MODEL} ..."
-        )
+        print(f"Loading Whisper model: {WHISPER_MODEL} ...")
 
-        _model = whisper.load_model(
-            WHISPER_MODEL
-        )
+        _model = whisper.load_model(WHISPER_MODEL)
 
-        print(
-            "Whisper model loaded successfully ✅"
-        )
+        print("Whisper model loaded successfully ✅")
 
     return _model
+
+
+# ============================================================
+# LANGUAGE DETECTION
+# ============================================================
+
+def detect_language(chunk_path: str) -> str:
+
+    model = load_model()
+
+    print("🌐 Detecting language...")
+
+    # Load audio
+    audio = whisper.load_audio(chunk_path)
+
+    # Pad / trim to Whisper's expected duration
+    audio = whisper.pad_or_trim(audio)
+
+    # Convert audio to Mel spectrogram
+    mel = whisper.log_mel_spectrogram(
+        audio,
+        n_mels=model.dims.n_mels
+    ).to(model.device)
+
+    # Detect language
+    _, probabilities = model.detect_language(mel)
+
+    detected_language = max(
+        probabilities,
+        key=probabilities.get
+    )
+
+    confidence = probabilities[detected_language]
+
+    print(
+        f"🌐 Detected language: "
+        f"{detected_language} "
+        f"({confidence:.2%})"
+    )
+
+    return detected_language
 
 
 # ============================================================
 # WHISPER TRANSCRIPTION
 # ============================================================
 
-def transcribe_chunk_whisper(
-    chunk_path: str
-) -> str:
+def transcribe_chunk_whisper(chunk_path: str) -> str:
 
     model = load_model()
+
+    print("🎙️ Using Whisper...")
 
     result = model.transcribe(
         chunk_path,
@@ -74,12 +104,10 @@ def transcribe_chunk_whisper(
 
 
 # ============================================================
-# SARVAM API
+# SARVAM API REQUEST
 # ============================================================
 
-def _send_to_sarvam(
-    piece_path: str
-) -> str:
+def _send_to_sarvam(piece_path: str) -> str:
 
     headers = {
         "api-subscription-key": SARVAM_API_KEY
@@ -101,7 +129,7 @@ def _send_to_sarvam(
         }
 
         response = requests.post(
-            SARVAM_STT_URL,
+            SARVAM_STT_TRANSLATE_URL,
             headers=headers,
             files=files,
             data=data,
@@ -132,16 +160,7 @@ def _send_to_sarvam(
 # SARVAM TRANSCRIPTION
 # ============================================================
 
-def transcribe_chunk_sarvam(
-    chunk_path: str
-) -> str:
-
-    """
-    Send a chunk to Sarvam.
-
-    The chunk is divided into 25-second pieces
-    before sending to the Sarvam sync API.
-    """
+def transcribe_chunk_sarvam(chunk_path: str) -> str:
 
     if not SARVAM_API_KEY:
 
@@ -149,6 +168,8 @@ def transcribe_chunk_sarvam(
             "SARVAM_API_KEY is not set "
             "in environment / .env"
         )
+
+    print("🇮🇳 Using Sarvam AI...")
 
     audio = AudioSegment.from_wav(
         chunk_path
@@ -185,7 +206,7 @@ def transcribe_chunk_sarvam(
 
             print(
                 f"  → Sarvam piece "
-                f"{i + 1}/{total_pieces} ..."
+                f"{i + 1}/{total_pieces}..."
             )
 
             text = _send_to_sarvam(
@@ -197,82 +218,62 @@ def transcribe_chunk_sarvam(
         finally:
 
             if os.path.exists(piece_path):
-
-                os.remove(
-                    piece_path
-                )
+                os.remove(piece_path)
 
     return full_text.strip()
 
 
 # ============================================================
-# MANUAL ENGINE SELECTION
+# AUTOMATIC ENGINE SELECTION
 # ============================================================
 
-def transcribe_chunk(
-    chunk_path: str,
-    language: str = "english"
-) -> str:
+def transcribe_chunk(chunk_path: str) -> str:
 
-    """
-    Manually select transcription engine.
+    detected_language = detect_language(
+        chunk_path
+    )
 
-    english  → Whisper
-    hinglish → Sarvam
-    """
+    print(
+        f"🔎 Language detected: "
+        f"{detected_language}"
+    )
 
-    if language.lower() == "hinglish":
+    # English → Whisper
+    if detected_language == "en":
 
         print(
-            "🇮🇳 Using Sarvam AI..."
+            "➡️ Selecting Whisper "
+            "for English audio."
+        )
+
+        return transcribe_chunk_whisper(
+            chunk_path
+        )
+
+    # Hindi / other Indic language → Sarvam
+    else:
+
+        print(
+            "➡️ Selecting Sarvam AI "
+            "for non-English audio."
         )
 
         return transcribe_chunk_sarvam(
             chunk_path
         )
 
-    print(
-        "🎙️ Using Whisper..."
-    )
-
-    return transcribe_chunk_whisper(
-        chunk_path
-    )
-
 
 # ============================================================
 # TRANSCRIBE ALL CHUNKS
 # ============================================================
 
-def transcribe_all(
-    chunks: list,
-    language: str = "english"
-) -> str:
+def transcribe_all(chunks: list) -> str:
 
-    """
-    Transcribe all audio chunks.
-
-    language="english"
-        → Whisper
-
-    language="hinglish"
-        → Sarvam
-    """
-
-    full_transcript = ""
-
-    engine = (
-        "Sarvam AI"
-        if language.lower() == "hinglish"
-        else "Whisper"
-    )
+    full_transcript = []
 
     print(
-        f"\n🔧 Manual transcription mode"
-    )
-
-    print(
-        f"Engine selected: {engine}"
+        "\n🔀 Automatic transcription "
+        "engine selection enabled."
     )
 
     for i, chunk in enumerate(
@@ -280,42 +281,28 @@ def transcribe_all(
         start=1
     ):
 
-        print(
-            "\n" + "=" * 60
-        )
+        print("\n" + "=" * 60)
 
         print(
-            f"🎵 CHUNK "
-            f"{i}/{len(chunks)}"
+            f"🎵 CHUNK {i}/{len(chunks)}"
         )
 
-        print(
-            "=" * 60
-        )
+        print("=" * 60)
 
         text = transcribe_chunk(
-            chunk,
-            language=language
+            chunk
         )
 
-        full_transcript += (
-            text + " "
-        )
+        full_transcript.append(text)
 
         print(
             f"✅ Chunk {i} completed"
         )
 
-    print(
-        "\n" + "=" * 60
-    )
+    print("\n" + "=" * 60)
+    print("🎉 TRANSCRIPTION COMPLETED")
+    print("=" * 60)
 
-    print(
-        "🎉 TRANSCRIPTION COMPLETED"
-    )
-
-    print(
-        "=" * 60
-    )
-
-    return full_transcript.strip()
+    return " ".join(
+        full_transcript
+    ).strip()
