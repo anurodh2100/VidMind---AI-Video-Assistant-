@@ -4,12 +4,16 @@ import whisper
 import os
 import requests
 from pydub import AudioSegment
+from dotenv import load_dotenv
+import torch
+
+load_dotenv()
 
 # Sarvam sync STT API accepts short audio.
 # We use 25-second pieces with a 5-second safety margin.
 SARVAM_PIECE_SECONDS = 25
 
-/
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -39,13 +43,22 @@ def load_model():
 
     if _model is None:
 
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        print(f"🖥️ Whisper device: {device}")
+
+        if device == "cuda":
+            print(
+                f"🎮 GPU: {torch.cuda.get_device_name(0)}"
+            )
+
         print(
-            f"Loading Whisper model: "
-            f"{WHISPER_MODEL} ..."
+            f"Loading Whisper model: {WHISPER_MODEL} ..."
         )
 
         _model = whisper.load_model(
-            WHISPER_MODEL
+            WHISPER_MODEL,
+            device=device
         )
 
         print(
