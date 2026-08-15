@@ -51,6 +51,8 @@ cd AI_Video_Assistant
 
 ### 2. Create and activate a virtual environment
 
+> Recommended Python version: **3.12.11**
+
 **Windows (PowerShell):**
 ```powershell
 python -m venv venv
@@ -80,23 +82,30 @@ pip install -U yt-dlp
 
 ### 4. Configure environment variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` and fill in your real keys:
+
+```bash
+cp .env.example .env
+```
 
 ```dotenv
-MISTRAL_API_KEY=your_mistral_key_here
-SARVAM_API_KEY=your_sarvam_key_here
+# ── Required ──────────────────────────────────────────────
+MISTRAL_API_KEY=your_mistral_api_key_here
+SARVAM_API_KEY=your_sarvam_api_key_here
 
-# Optional overrides
+# ── Optional overrides ──────────────────────────────────────
+WHISPER_API_KEY=your_whisper_api_key
 WHISPER_MODEL=small
 SARVAM_STT_MODEL=saaras:v3
 ```
 
-> ⚠️ Never commit your real `.env` file — make sure it's listed in `.gitignore`.
+> ⚠️ Never commit your real `.env` file — it's already listed in `.gitignore`. Only `.env.example` (no real keys) should be committed.
 
 - **MISTRAL_API_KEY** — required, used by `ChatMistralAI` (`mistral-small-latest`) for summarization, extraction, and RAG chat
 - **SARVAM_API_KEY** — required only if you use `language="hinglish"` (Sarvam AI speech-to-text)
+- **WHISPER_API_KEY** — optional, not currently read by `transcriber.py` (Whisper runs locally via `openai-whisper`, no API key needed) — included for future use if that changes
 - **WHISPER_MODEL** — Whisper model size for English transcription (default `small`); larger models are more accurate but slower and need more RAM/VRAM
-- No OpenAI key is required by this pipeline (Whisper here runs locally via `openai-whisper`, not the OpenAI API)
+- **SARVAM_STT_MODEL** — Sarvam speech-to-text model to use for Hinglish transcription (default `saaras:v3`)
 
 ---
 
