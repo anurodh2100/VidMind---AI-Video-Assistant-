@@ -1,93 +1,32 @@
-# ==============================
-# Python
-# ==============================
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# ==============================
-# Virtual Environment
-# ==============================
+# ── Environment & secrets ──────────────────────────────────
+.env
 .venv/
 venv/
 env/
 
-# ==============================
-# Environment Variables / Secrets
-# ==============================
-.env
-.env.*
-!.env.example
-
-# ==============================
-# Downloads / Generated Audio
-# ==============================
-downloads/
-*.mp3
-*.mp4
-*.wav
-*.m4a
-*.webm
-*.ogg
-
-# ==============================
-# Generated Files
-# ==============================
-output/
-outputs/
-temp/
-tmp/
-*.pdf
-
-# ==============================
-# ChromaDB / Vector Database
-# ==============================
-chroma/
-chroma_db/
-vectorstore/
-*.sqlite3
-
-# ==============================
-# Streamlit
-# ==============================
-.streamlit/secrets.toml
-
-# ==============================
-# Jupyter
-# ==============================
-.ipynb_checkpoints/
-
-# ==============================
-# IDE
-# ==============================
-.vscode/
-.idea/
-
-# ==============================
-# OS
-# ==============================
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# ==============================
-# Logs
-# ==============================
-*.log
-
-# ==============================
-# Build / Distribution
-# ==============================
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
 build/
 dist/
-*.egg-info/
 
-# ==============================
-# Testing / Coverage
-# ==============================
-.pytest_cache/
-.coverage
-htmlcov/
-
+# ── Generated data (regenerated on each run) ───────────────
+downloads/
+vector_db/
 test.py
+# ── OS / editor cruft ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ── Logs ────────────────────────────────────────────────────
+*.log
+
+# ── Jupyter (if you ever use notebooks here) ───────────────
+.ipynb_checkpoints/
