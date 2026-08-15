@@ -93,9 +93,9 @@ cp .env.example .env
 MISTRAL_API_KEY=your_mistral_api_key_here
 SARVAM_API_KEY=your_sarvam_api_key_here
 
-# ── Optional overrides ──────────────────────────────────────
 WHISPER_API_KEY=your_whisper_api_key
 WHISPER_MODEL=small
+WHISPER_API_KEY=your_sarvam_api_key
 SARVAM_STT_MODEL=saaras:v3
 ```
 
