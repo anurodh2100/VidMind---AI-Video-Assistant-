@@ -91,7 +91,6 @@ cp .env.example .env
 ```dotenv
 # ── Required ──────────────────────────────────────────────
 MISTRAL_API_KEY=your_mistral_api_key_here
-SARVAM_API_KEY=your_sarvam_api_key_here
 
 WHISPER_API_KEY=your_whisper_api_key
 WHISPER_MODEL=small
