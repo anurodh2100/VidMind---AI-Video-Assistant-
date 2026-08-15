@@ -91,8 +91,6 @@ cp .env.example .env
 ```dotenv
 # ── Required ──────────────────────────────────────────────
 MISTRAL_API_KEY=your_mistral_api_key_here
-
-WHISPER_API_KEY=your_whisper_api_key
 WHISPER_MODEL=small
 WHISPER_API_KEY=your_sarvam_api_key
 SARVAM_STT_MODEL=saaras:v3
@@ -100,9 +98,7 @@ SARVAM_STT_MODEL=saaras:v3
 
 > ⚠️ Never commit your real `.env` file — it's already listed in `.gitignore`. Only `.env.example` (no real keys) should be committed.
 
-- **MISTRAL_API_KEY** — required, used by `ChatMistralAI` (`mistral-small-latest`) for summarization, extraction, and RAG chat
 - **SARVAM_API_KEY** — required only if you use `language="hinglish"` (Sarvam AI speech-to-text)
-- **WHISPER_API_KEY** — optional, not currently read by `transcriber.py` (Whisper runs locally via `openai-whisper`, no API key needed) — included for future use if that changes
 - **WHISPER_MODEL** — Whisper model size for English transcription (default `small`); larger models are more accurate but slower and need more RAM/VRAM
 - **SARVAM_STT_MODEL** — Sarvam speech-to-text model to use for Hinglish transcription (default `saaras:v3`)
 
